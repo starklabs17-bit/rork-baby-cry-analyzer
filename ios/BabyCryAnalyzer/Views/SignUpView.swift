@@ -5,56 +5,72 @@ struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var email: String = ""
     @State private var password: String = ""
-    @State private var alertMessage: String? = nil
+    @State private var confirmPassword: String = ""
+    @State private var localError: String? = nil
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: "person.crop.circle.badge.plus")
-                            .font(.system(size: 44))
-                            .foregroundStyle(.tint)
-                            .symbolRenderingMode(.hierarchical)
+        ZStack {
+            authBackground
 
-                        Text("Create your account")
-                            .font(.title2.bold())
-                            .foregroundStyle(.white)
+            VStack(spacing: 0) {
+                Spacer()
 
-                        Text("Save your cry history and continue across sessions.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+                VStack(spacing: 8) {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.tint)
+                        .symbolRenderingMode(.hierarchical)
 
-                    VStack(spacing: 16) {
-                        TextField("Email", text: $email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .padding()
-                            .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
+                    Text("Create Account")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(.white)
 
-                        SecureField("Password", text: $password)
-                            .textContentType(.newPassword)
-                            .textInputAutocapitalization(.never)
-                            .padding()
-                            .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
-                    }
+                    Text("Create an account to save your cry history and continue across sessions.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 28)
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .padding()
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
+
+                    SecureField("Password", text: $password)
+                        .textContentType(.newPassword)
+                        .textInputAutocapitalization(.never)
+                        .padding()
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
+
+                    SecureField("Confirm Password", text: $confirmPassword)
+                        .textContentType(.newPassword)
+                        .textInputAutocapitalization(.never)
+                        .padding()
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
 
                     Button {
+                        localError = nil
+                        authService.errorMessage = nil
+
+                        guard password == confirmPassword else {
+                            localError = "Passwords do not match"
+                            return
+                        }
+
+                        guard password.count >= 8 else {
+                            localError = "Password must be at least 8 characters"
+                            return
+                        }
+
                         Task {
                             await authService.signUp(email: email, password: password)
-
-                            if authService.isAuthenticated {
-                                dismiss()
-                                return
-                            }
-
-                            if let message = authService.errorMessage {
-                                alertMessage = message
-                                authService.errorMessage = nil
-                            }
                         }
                     } label: {
                         Group {
@@ -62,7 +78,7 @@ struct SignUpView: View {
                                 ProgressView()
                                     .tint(.white)
                             } else {
-                                Text("Create Account")
+                                Text("Sign Up")
                                     .font(.headline)
                                     .fontWeight(.bold)
                             }
@@ -73,57 +89,63 @@ struct SignUpView: View {
                         .foregroundStyle(.white)
                     }
                     .disabled(authService.isLoading)
-                }
-                .padding(24)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
-            .background(backgroundView)
-            .navigationTitle("Sign Up")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
+
+                    Divider()
+                        .overlay(.white.opacity(0.1))
+                        .padding(.vertical, 8)
+
+                    Button("Already have an account? Sign In") {
                         dismiss()
                     }
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 }
+                .padding(22)
+                .background(.regularMaterial, in: .rect(cornerRadius: 28))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
             }
+            .padding(.vertical, 28)
         }
         .preferredColorScheme(.dark)
-        .alert(alertTitle, isPresented: isShowingAlert) {
+        .alert("Error", isPresented: isShowingAlert) {
             Button("OK") {
-                alertMessage = nil
+                if localError != nil {
+                    localError = nil
+                } else {
+                    authService.errorMessage = nil
+                }
             }
         } message: {
-            Text(alertMessage ?? "")
+            Text(displayedAlertMessage ?? "")
         }
-        .onChange(of: authService.isAuthenticated) { oldValue, newValue in
-            if !oldValue && newValue {
-                dismiss()
-            }
-        }
+    }
+
+    private var displayedAlertMessage: String? {
+        localError ?? authService.errorMessage
     }
 
     private var isShowingAlert: Binding<Bool> {
         Binding(
-            get: { alertMessage != nil },
+            get: { displayedAlertMessage != nil },
             set: { isPresented in
                 if !isPresented {
-                    alertMessage = nil
+                    localError = nil
+                    authService.errorMessage = nil
                 }
             }
         )
     }
 
-    private var alertTitle: String {
-        "Error"
-    }
-
-    private var backgroundView: some View {
+    private var authBackground: some View {
         ZStack {
             Color.black
+                .ignoresSafeArea()
 
             MeshGradient(
                 width: 3,
@@ -134,15 +156,15 @@ struct SignUpView: View {
                     [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
                 ],
                 colors: [
-                    .black, .blue.opacity(0.65), .indigo.opacity(0.45),
-                    .purple.opacity(0.4), .black, .blue.opacity(0.25),
-                    .black, .indigo.opacity(0.35), .black
+                    .black, .blue.opacity(0.7), .indigo.opacity(0.55),
+                    .purple.opacity(0.45), .black, .blue.opacity(0.3),
+                    .black, .indigo.opacity(0.4), .black
                 ]
             )
             .blur(radius: 70)
             .opacity(0.85)
+            .ignoresSafeArea()
             .allowsHitTesting(false)
         }
-        .ignoresSafeArea()
     }
 }

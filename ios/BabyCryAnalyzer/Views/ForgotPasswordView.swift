@@ -4,27 +4,34 @@ struct ForgotPasswordView: View {
     @Environment(AuthService.self) private var authService
     @Environment(\.dismiss) private var dismiss
     @State private var email: String = ""
-    @State private var alertMessage: String? = nil
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Image(systemName: "envelope.badge")
-                            .font(.system(size: 42))
-                            .foregroundStyle(.tint)
-                            .symbolRenderingMode(.hierarchical)
+        ZStack {
+            authBackground
 
-                        Text("Reset your password")
-                            .font(.title2.bold())
-                            .foregroundStyle(.white)
+            VStack(spacing: 0) {
+                Spacer()
 
-                        Text("Enter your email and we’ll send you reset instructions.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+                VStack(spacing: 8) {
+                    Image(systemName: "envelope.badge")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.tint)
+                        .symbolRenderingMode(.hierarchical)
 
+                    Text("Reset Password")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(.white)
+
+                    Text("Enter your email and we'll send you a reset link")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 28)
+
+                Spacer()
+
+                VStack(spacing: 16) {
                     TextField("Email", text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
@@ -34,10 +41,10 @@ struct ForgotPasswordView: View {
                         .background(.ultraThinMaterial, in: .rect(cornerRadius: 16))
 
                     Button {
+                        authService.errorMessage = nil
+
                         Task {
                             await authService.resetPassword(email: email)
-                            alertMessage = authService.errorMessage
-                            authService.errorMessage = nil
                         }
                     } label: {
                         Group {
@@ -56,61 +63,59 @@ struct ForgotPasswordView: View {
                         .foregroundStyle(.white)
                     }
                     .disabled(authService.isLoading)
-                }
-                .padding(24)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
-            .background(backgroundView)
-            .navigationTitle("Forgot Password")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
+
+                    Divider()
+                        .overlay(.white.opacity(0.1))
+                        .padding(.vertical, 8)
+
+                    Button("Back to Sign In") {
                         dismiss()
                     }
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                 }
+                .padding(22)
+                .background(.regularMaterial, in: .rect(cornerRadius: 28))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
             }
+            .padding(.vertical, 28)
         }
         .preferredColorScheme(.dark)
-        .alert(alertTitle, isPresented: isShowingAlert) {
+        .alert("Error", isPresented: isShowingAlert) {
             Button("OK") {
-                let message = alertMessage
-                alertMessage = nil
+                let message = authService.errorMessage
+                authService.errorMessage = nil
 
-                if message == successMessage {
+                if message?.localizedCaseInsensitiveContains("sent") == true {
                     dismiss()
                 }
             }
         } message: {
-            Text(alertMessage ?? "")
+            Text(authService.errorMessage ?? "")
         }
     }
 
     private var isShowingAlert: Binding<Bool> {
         Binding(
-            get: { alertMessage != nil },
+            get: { authService.errorMessage != nil },
             set: { isPresented in
                 if !isPresented {
-                    alertMessage = nil
+                    authService.errorMessage = nil
                 }
             }
         )
     }
 
-    private var alertTitle: String {
-        alertMessage == successMessage ? "Check your inbox" : "Error"
-    }
-
-    private var successMessage: String {
-        "Password reset email sent. Check your inbox."
-    }
-
-    private var backgroundView: some View {
+    private var authBackground: some View {
         ZStack {
             Color.black
+                .ignoresSafeArea()
 
             MeshGradient(
                 width: 3,
@@ -121,15 +126,15 @@ struct ForgotPasswordView: View {
                     [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
                 ],
                 colors: [
-                    .black, .blue.opacity(0.6), .indigo.opacity(0.4),
-                    .purple.opacity(0.35), .black, .blue.opacity(0.2),
-                    .black, .indigo.opacity(0.3), .black
+                    .black, .blue.opacity(0.7), .indigo.opacity(0.55),
+                    .purple.opacity(0.45), .black, .blue.opacity(0.3),
+                    .black, .indigo.opacity(0.4), .black
                 ]
             )
             .blur(radius: 70)
             .opacity(0.85)
+            .ignoresSafeArea()
             .allowsHitTesting(false)
         }
-        .ignoresSafeArea()
     }
 }

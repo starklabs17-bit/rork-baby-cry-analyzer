@@ -1,29 +1,20 @@
-# Add a polished authentication flow before the main app
+# Add account creation and password reset screens
 
 **Features**
-- [x] Show a dedicated sign-in screen before anyone can access the main app.
-- [x] Let people enter their email and password to sign in.
-- [x] Show a loading state on the main action while sign-in is in progress.
-- [x] Show a clear alert when sign-in fails, with a simple OK action to dismiss it.
-- [x] Add a Sign Up flow so new users can create an account without leaving the app.
-- [x] Add a Forgot Password flow so users can request a reset email.
-- [x] Open the main listening and history experience automatically after a successful sign-in.
+- [x] Add a sign-up screen where new users can enter their email, password, and password confirmation.
+- [x] Show a clear message if the passwords do not match or are too short.
+- [x] Let people create an account with one primary action button and return to sign in with a secondary text button.
+- [x] Add a password reset screen where users can enter their email and request a reset link.
+- [x] Show a confirmation message after a reset link is sent and return the user to sign in after they acknowledge it.
+- [x] Reuse the existing account error messaging so sign-up and reset problems appear in native alerts.
 
 **Design**
-- [x] Use a dark, refined background that matches the app’s current premium look.
-- [x] Keep the top area minimal with the waveform symbol, app name, and a quiet supporting line.
-- [x] Style the email and password fields with soft translucent surfaces for a modern iOS feel.
-- [x] Make the primary sign-in action full-width, bold, and high-contrast.
-- [x] Keep secondary actions understated and elegant so the main action stays visually dominant.
-- [x] Use generous spacing, subtle depth, and clean typography for an upscale feel.
+- [x] Match the existing dark, premium authentication style so the new screens feel consistent with sign in.
+- [x] Use the same glassy input fields and full-width primary buttons for visual continuity.
+- [x] Keep the layout simple and focused with clear titles, supporting text, and generous spacing.
+- [x] Preserve native sheet behavior so the screens feel like polished iPhone account flows.
 
 **Pages / Screens**
-- [x] **Sign In**: Branded welcome screen with email, password, forgot password, and sign-in action.
-- [x] **Sign Up**: Simple account creation screen with the same visual style as sign-in.
-- [x] **Forgot Password**: Lightweight reset screen focused on entering an email and sending reset instructions.
-- [x] **Main App**: Existing listening and history experience shown only after authentication.
-
-**Behavior**
-- [x] Present Sign Up and Forgot Password as modal screens from the sign-in screen.
-- [x] Keep the experience smooth so users can dismiss those screens and return to sign-in easily.
-- [x] Preserve the signed-in state so returning users go straight into the app when already logged in.
+- [x] **Create Account**: Email, password, confirm password, a primary sign-up button, and a text button to return to sign in.
+- [x] **Reset Password**: Email field, reset-link button, and a text button to go back to sign in.
+- [x] **Alerts**: A native message for validation issues, account errors, and reset-link success.
