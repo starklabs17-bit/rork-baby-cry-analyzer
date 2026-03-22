@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 nonisolated struct ChatMessage: Codable, Sendable {
     let role: String
@@ -18,6 +19,7 @@ nonisolated struct CryAnalysisResponse: Codable, Sendable {
 @MainActor
 class CryAnalysisService {
     private let toolkitURL: String
+    private let logger: Logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "BabyCryAnalyzer", category: "CryAnalysis")
     private let maxRetries = 2
 
     init() {
@@ -46,7 +48,7 @@ class CryAnalysisService {
                 )
             } catch {
                 lastError = error
-                print("[CryAnalysis] Attempt \(attempt + 1) failed: \(error)")
+                logger.error("Attempt \(attempt + 1) failed: \(error.localizedDescription)")
             }
         }
         throw lastError ?? CryAnalysisError.serverError(500)
@@ -87,7 +89,7 @@ class CryAnalysisService {
 
         guard (200...299).contains(httpResponse.statusCode) else {
             let body = String(data: data, encoding: .utf8) ?? "no body"
-            print("[CryAnalysis] HTTP \(httpResponse.statusCode): \(body)")
+            logger.error("HTTP \(httpResponse.statusCode): \(body, privacy: .private)")
             throw CryAnalysisError.serverError(httpResponse.statusCode)
         }
 
