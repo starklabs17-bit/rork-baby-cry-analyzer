@@ -1,17 +1,16 @@
-# Gate the app by sign-in and keep each user’s history separate
+# Limit audio memory use during recording
 
 **Features**
-- [x] Show the sign-in screen before the main app for signed-out users.
-- [x] Open the main app automatically after a successful sign-in.
-- [x] Keep cry analysis history separate for each signed-in person.
-- [x] Add a sign-out action from the history screen with a confirmation prompt.
+- Keep live recording responsive during long listening sessions.
+- Prevent the running sound history from growing without limit in memory.
+- Preserve the recent sound level data needed for the current analysis experience.
 
 **Design**
-- Keep the current dark, native iPhone look and existing app styling.
-- Use a standard destructive confirmation for signing out so the action feels clear and safe.
-- Preserve the current tab layout and overall flow.
+- No visual changes to the app.
+- Recording behavior stays the same from the user’s perspective.
 
 **Pages / Screens**
-- [x] **Launch flow**: Decide between the sign-in screen and the main app based on whether the user is signed in.
-- [x] **History screen**: Add a top-right sign-out button and a confirmation alert before signing out.
-- [x] **Saved history**: Store each person’s analysis history in their own private app data file so accounts do not mix.
+- Listen screen: long recordings remain more stable and memory-efficient.
+
+**Implementation Progress**
+- [x] Cap the rolling decibel sample buffer at 500 entries in `AudioRecordingService.updateLevels()`.

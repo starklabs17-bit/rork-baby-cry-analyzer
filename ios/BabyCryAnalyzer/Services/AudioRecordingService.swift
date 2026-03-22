@@ -109,6 +109,9 @@ class AudioRecordingService: NSObject, AVAudioRecorderDelegate {
         let normalizedLevel = max(0, (db + 60) / 60)
         currentDecibels = db
         decibelSamples.append(db)
+        if decibelSamples.count > 500 {
+            decibelSamples.removeFirst()
+        }
 
         var newLevels = audioLevels
         newLevels.removeFirst()
