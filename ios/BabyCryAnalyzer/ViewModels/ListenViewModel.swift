@@ -49,6 +49,7 @@ class ListenViewModel {
                     latestAnalysis = analysis
                 }
                 historyStore.add(analysis)
+                try? FileManager.default.removeItem(at: recorder.recordingURL)
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true

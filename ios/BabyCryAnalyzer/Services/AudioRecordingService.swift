@@ -59,6 +59,10 @@ class AudioRecordingService: NSObject, AVAudioRecorderDelegate {
             audioRecorder?.delegate = self
             audioRecorder?.isMeteringEnabled = true
             audioRecorder?.record()
+            try? FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.complete],
+                ofItemAtPath: recordingURL.path
+            )
             isRecording = true
             recordingDuration = 0
             decibelSamples = []
