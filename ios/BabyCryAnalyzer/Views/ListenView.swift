@@ -142,7 +142,7 @@ struct ListenView: View {
             }
             .scrollIndicators(.hidden)
             .background(Color(.systemBackground))
-            .navigationTitle("Hush")
+            .navigationTitle("Listen")
             .navigationBarTitleDisplayMode(.large)
         }
         .animation(.spring(duration: 0.5), value: viewModel.isAnalyzing)
