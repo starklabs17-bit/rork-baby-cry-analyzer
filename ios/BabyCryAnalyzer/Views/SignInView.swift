@@ -19,7 +19,7 @@ struct SignInView: View {
                         .font(.system(size: 72))
                         .foregroundStyle(.white)
 
-                    Text("Baby Cry Analyzer")
+                    Text("CrySense")
                         .font(.largeTitle.bold())
                         .foregroundStyle(.white)
 
