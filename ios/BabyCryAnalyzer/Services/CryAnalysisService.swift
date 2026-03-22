@@ -178,7 +178,9 @@ class CryAnalysisService {
         if let tip = tips.first {
             return tip.trimmingCharacters(in: .whitespacesAndNewlines) + "."
         }
-        return sentences.count > 1 ? sentences[1].trimmingCharacters(in: .whitespacesAndNewlines) + "." : "Try comforting your baby with gentle rocking."
+        return sentences.last?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? (sentences.last!.trimmingCharacters(in: .whitespacesAndNewlines) + ".")
+            : "Try comforting your baby with gentle rocking."
     }
 
     private func buildPrompt(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) -> String {

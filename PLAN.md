@@ -1,11 +1,13 @@
-# Release microphone access after a recording ends
+# Fix occasional analysis tip crash
 
 **Features**
-- [x] When you stop a recording, the app immediately releases microphone access.
-- [x] Other apps can resume music, calls, or audio playback right away.
-- [x] The listening flow stays the same, with no visual changes.
+- [x] Prevent the analysis result from crashing when the response only contains one sentence.
+- [x] Always fall back to a safe comforting tip when the returned text is too short or empty.
 
-**Behavior**
-- [x] The app will finish stopping the recording and audio level tracking first.
-- [x] Right after that, it will fully deactivate its microphone use.
-- [x] This change only affects what happens after recording ends.
+**Design**
+- No visual changes.
+- The result experience stays the same, but becomes more reliable.
+
+**Pages / Screens**
+- [x] Listening and analysis flow: keeps working normally after a result is returned.
+- [x] Results card: continues showing a helpful tip without unexpected failures.
