@@ -36,6 +36,12 @@ class ListenViewModel {
             return
         }
 
+        guard avgDb > -55 else {
+            errorMessage = "No crying detected. Please hold the phone closer to your baby and try again."
+            showError = true
+            return
+        }
+
         isAnalyzing = true
 
         Task {

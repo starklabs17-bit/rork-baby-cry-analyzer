@@ -11,6 +11,7 @@ class AudioRecordingService: NSObject, AVAudioRecorderDelegate {
     var recordingDuration: Int = 0
     var hasPermission = false
 
+    private let maxRecordingDuration: Int = 300
     private var audioRecorder: AVAudioRecorder?
     private var levelTimer: Timer?
     private var durationTimer: Timer?
@@ -92,6 +93,9 @@ class AudioRecordingService: NSObject, AVAudioRecorderDelegate {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.recordingDuration += 1
+                if self.recordingDuration >= self.maxRecordingDuration {
+                    self.stopRecording()
+                }
             }
         }
     }
