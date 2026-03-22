@@ -142,7 +142,7 @@ struct ListenView: View {
             }
             .scrollIndicators(.hidden)
             .background(Color(.systemBackground))
-            .navigationTitle("CrySense")
+            .navigationTitle("Hush")
             .navigationBarTitleDisplayMode(.large)
         }
         .animation(.spring(duration: 0.5), value: viewModel.isAnalyzing)
@@ -177,10 +177,8 @@ struct ListenView: View {
     }
 
     private var statusTitle: String {
-        if viewModel.isAnalyzing { return "Analyzing…" }
         if viewModel.recorder.isRecording { return "Listening" }
-        if viewModel.latestAnalysis != nil { return "Ready" }
-        return "CrySense"
+        return "Hush"
     }
 
     private var statusSubtitle: String {

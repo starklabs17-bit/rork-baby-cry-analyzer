@@ -6,7 +6,7 @@
 - [x] Make the main action buttons bright white with dark text for stronger contrast.
 - [x] Update supporting links and subtitles to softer white tones for a calmer hierarchy.
 - [x] Align the Listen, History, and Profile tabs with matching large titles at the top left.
-- [x] Use CrySense as the user-facing app name in the auth flow, navigation, and app display name.
+- [x] Use CrySense as the user-facing app name in the auth flow and app display name, while the Listen screen uses Hush.
 
 ## Design
 
