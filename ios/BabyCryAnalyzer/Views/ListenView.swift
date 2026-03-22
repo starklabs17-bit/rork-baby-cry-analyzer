@@ -1,0 +1,174 @@
+import SwiftUI
+
+struct ListenView: View {
+    @State private var viewModel = ListenViewModel()
+    @Environment(CryHistoryStore.self) private var historyStore
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                Spacer().frame(height: 60)
+
+                VStack(spacing: 8) {
+                    Text(statusTitle)
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+
+                    Text(statusSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+                .animation(.smooth(duration: 0.3), value: viewModel.recorder.isRecording)
+
+                Spacer().frame(height: 48)
+
+                ZStack {
+                    Circle()
+                        .fill(
+                            MeshGradient(
+                                width: 3, height: 3,
+                                points: [
+                                    [0.0, 0.0], [0.5, 0.0], [1.0, 0.0],
+                                    [0.0, 0.5], [0.5, 0.5], [1.0, 0.5],
+                                    [0.0, 1.0], [0.5, 1.0], [1.0, 1.0]
+                                ],
+                                colors: [
+                                    .purple.opacity(0.15), .indigo.opacity(0.1), .blue.opacity(0.08),
+                                    .pink.opacity(0.12), .purple.opacity(0.08), .indigo.opacity(0.1),
+                                    .orange.opacity(0.06), .pink.opacity(0.1), .purple.opacity(0.12)
+                                ]
+                            )
+                        )
+                        .frame(width: 240, height: 240)
+                        .blur(radius: 40)
+                        .opacity(viewModel.recorder.isRecording ? 1 : 0.5)
+                        .scaleEffect(viewModel.recorder.isRecording ? 1.2 : 0.9)
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: viewModel.recorder.isRecording)
+
+                    VStack(spacing: 20) {
+                        RecordButton(
+                            isRecording: viewModel.recorder.isRecording,
+                            isAnalyzing: viewModel.isAnalyzing,
+                            action: { viewModel.toggleRecording(historyStore: historyStore) }
+                        )
+
+                        if viewModel.recorder.isRecording {
+                            Text(viewModel.formattedDuration)
+                                .font(.system(.title2, design: .rounded, weight: .light))
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.numericText())
+                                .animation(.default, value: viewModel.recorder.recordingDuration)
+                                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        }
+                    }
+                }
+                .frame(height: 280)
+
+                WaveformView(
+                    levels: viewModel.recorder.audioLevels,
+                    isActive: viewModel.recorder.isRecording
+                )
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+
+                if viewModel.isAnalyzing {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                            .tint(.secondary)
+                        Text("Analyzing cry patterns…")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.top, 24)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                if let analysis = viewModel.latestAnalysis {
+                    AnalysisResultCard(analysis: analysis)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 32)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)),
+                            removal: .opacity
+                        ))
+                }
+
+                Spacer().frame(height: 40)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden)
+        .background(Color(.systemBackground))
+        .animation(.spring(duration: 0.5), value: viewModel.isAnalyzing)
+        .animation(.spring(duration: 0.5), value: viewModel.latestAnalysis?.id)
+        .animation(.spring(duration: 0.5), value: viewModel.recorder.isRecording)
+        .task {
+            await viewModel.requestMicPermission()
+        }
+        .alert("Oops", isPresented: $viewModel.showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.errorMessage ?? "Something went wrong.")
+        }
+        .overlay {
+            if !viewModel.recorder.hasPermission && !viewModel.recorder.isRecording {
+                permissionOverlay
+            }
+        }
+    }
+
+    private var statusTitle: String {
+        if viewModel.isAnalyzing { return "Analyzing…" }
+        if viewModel.recorder.isRecording { return "Listening" }
+        if viewModel.latestAnalysis != nil { return "Ready" }
+        return "Hush"
+    }
+
+    private var statusSubtitle: String {
+        if viewModel.isAnalyzing { return "Understanding your baby's needs" }
+        if viewModel.recorder.isRecording { return "Tap stop when ready to analyze" }
+        if viewModel.latestAnalysis != nil { return "Tap the mic to start a new recording" }
+        return "Tap the microphone to begin"
+    }
+
+    private var permissionOverlay: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Image(systemName: "mic.slash")
+                    .font(.system(size: 44, weight: .thin))
+                    .foregroundStyle(.tertiary)
+
+                VStack(spacing: 8) {
+                    Text("Microphone Access")
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+                    Text("Enable microphone access in Settings to record and analyze your baby's crying.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Open Settings")
+                        .font(.subheadline.bold())
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(.label))
+            }
+            .padding(40)
+        }
+    }
+}

@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "Baby Cry Analyzer",
+      "path": "ios",
+      "framework": "swift"
+    }
+  ]
+}
