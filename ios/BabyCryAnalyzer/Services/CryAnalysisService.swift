@@ -26,8 +26,14 @@ class CryAnalysisService {
         self.toolkitURL = Config.EXPO_PUBLIC_TOOLKIT_URL
     }
 
-    func analyzeCry(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) async throws -> CryAnalysis {
-        let prompt = buildPrompt(durationSeconds: durationSeconds, averageDecibels: averageDecibels, peakDecibels: peakDecibels)
+    func analyzeCry(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float, transcript: String? = nil, transcriptLanguage: String? = nil) async throws -> CryAnalysis {
+        let prompt = buildPrompt(
+            durationSeconds: durationSeconds,
+            averageDecibels: averageDecibels,
+            peakDecibels: peakDecibels,
+            transcript: transcript,
+            transcriptLanguage: transcriptLanguage
+        )
 
         var lastError: Error?
         for attempt in 0...maxRetries {
@@ -44,7 +50,9 @@ class CryAnalysisService {
                     confidence: analysisResponse.confidence,
                     tip: analysisResponse.tip,
                     durationSeconds: durationSeconds,
-                    averageDecibels: averageDecibels
+                    averageDecibels: averageDecibels,
+                    transcript: transcript,
+                    transcriptLanguage: transcriptLanguage
                 )
             } catch {
                 lastError = error
@@ -53,7 +61,13 @@ class CryAnalysisService {
         }
 
         logger.error("Falling back to local analysis after server failure: \(lastError?.localizedDescription ?? "unknown error")")
-        return fallbackAnalysis(durationSeconds: durationSeconds, averageDecibels: averageDecibels, peakDecibels: peakDecibels)
+        return fallbackAnalysis(
+            durationSeconds: durationSeconds,
+            averageDecibels: averageDecibels,
+            peakDecibels: peakDecibels,
+            transcript: transcript,
+            transcriptLanguage: transcriptLanguage
+        )
     }
 
     private func callAgentChat(prompt: String) async throws -> String {
@@ -185,7 +199,7 @@ class CryAnalysisService {
             : "Try comforting your baby with gentle rocking."
     }
 
-    private func fallbackAnalysis(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) -> CryAnalysis {
+    private func fallbackAnalysis(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float, transcript: String?, transcriptLanguage: String?) -> CryAnalysis {
         let reason: CryReason
         let confidence: Double
         let tip: String
@@ -221,11 +235,13 @@ class CryAnalysisService {
             confidence: confidence,
             tip: tip,
             durationSeconds: durationSeconds,
-            averageDecibels: averageDecibels
+            averageDecibels: averageDecibels,
+            transcript: transcript,
+            transcriptLanguage: transcriptLanguage
         )
     }
 
-    private func buildPrompt(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) -> String {
+    private func buildPrompt(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float, transcript: String?, transcriptLanguage: String?) -> String {
         let intensity: String
         if averageDecibels > -15 {
             intensity = "very loud and intense"
@@ -248,6 +264,14 @@ class CryAnalysisService {
             durationDesc = "prolonged (over \(durationSeconds / 60) minute\(durationSeconds >= 120 ? "s" : ""))"
         }
 
+        let transcriptContext: String
+        if let transcript, !transcript.isEmpty {
+            let languageNote: String = transcriptLanguage?.isEmpty == false ? " in \(transcriptLanguage!)" : ""
+            transcriptContext = "- Detected vocal transcript\(languageNote): \(transcript)"
+        } else {
+            transcriptContext = "- Detected vocal transcript: none or unintelligible"
+        }
+
         return """
         You are a pediatric care assistant AI. Based on the following audio characteristics of a baby crying, determine the most likely reason for the crying.
 
@@ -256,6 +280,7 @@ class CryAnalysisService {
         - Intensity: \(intensity)
         - Average volume: \(String(format: "%.1f", averageDecibels)) dB
         - Peak volume: \(String(format: "%.1f", peakDecibels)) dB
+        \(transcriptContext)
 
         Based on common patterns in baby crying:
         - Hungry cries tend to be rhythmic, repetitive, and moderate intensity that builds over time
@@ -265,6 +290,8 @@ class CryAnalysisService {
         - Gassy cries often come in short bursts with pauses
         - Needs attention cries are moderate, stop-and-start, looking for response
         - Overstimulated cries build gradually, often with fussing before full crying
+
+        If transcript content suggests spoken words or background speech, treat it only as weak context and prioritize the cry pattern metrics.
 
         Respond ONLY with a JSON object (no markdown, no extra text) in this exact format:
         {"reason": "<one of: Hungry, Tired, Uncomfortable, Needs Attention, Pain, Gassy, Overstimulated, Unknown>", "confidence": <0.0 to 1.0>, "tip": "<brief, warm, helpful tip for the parent in 1-2 sentences>"}

@@ -24,3 +24,9 @@
 - [x] **Listen**: Add a standard large title at the top left so it matches the other tabs.
 - [x] **History**: Ensure the screen uses the standard large title layout.
 - [x] **Profile**: Ensure the screen uses the standard large title layout.
+
+## AI Enhancements
+
+- [x] Add voice recognition for recorded and uploaded audio.
+- [x] Include the detected transcript in the cry analysis request.
+- [x] Show voice recognition results in the analysis card.

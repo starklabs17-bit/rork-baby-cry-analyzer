@@ -33,6 +33,30 @@ struct AnalysisResultCard: View {
                 Spacer()
             }
 
+            if let transcript = analysis.transcript {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Voice Recognition")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                    Text(transcript)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let language = analysis.transcriptLanguage, !language.isEmpty {
+                        Text(language.uppercased())
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.quaternary.opacity(0.5), in: .capsule)
+                    }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .clipShape(.rect(cornerRadius: 16))
+            }
+
             Text(analysis.tip)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

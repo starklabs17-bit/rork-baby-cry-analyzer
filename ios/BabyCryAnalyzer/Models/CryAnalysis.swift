@@ -8,8 +8,20 @@ nonisolated struct CryAnalysis: Identifiable, Codable, Sendable {
     let tip: String
     let durationSeconds: Int
     let averageDecibels: Float
+    let transcript: String?
+    let transcriptLanguage: String?
 
-    init(id: UUID = UUID(), date: Date = Date(), reason: CryReason, confidence: Double, tip: String, durationSeconds: Int, averageDecibels: Float) {
+    init(
+        id: UUID = UUID(),
+        date: Date = Date(),
+        reason: CryReason,
+        confidence: Double,
+        tip: String,
+        durationSeconds: Int,
+        averageDecibels: Float,
+        transcript: String? = nil,
+        transcriptLanguage: String? = nil
+    ) {
         self.id = id
         self.date = date
         self.reason = reason
@@ -17,6 +29,8 @@ nonisolated struct CryAnalysis: Identifiable, Codable, Sendable {
         self.tip = tip
         self.durationSeconds = durationSeconds
         self.averageDecibels = averageDecibels
+        self.transcript = transcript
+        self.transcriptLanguage = transcriptLanguage
     }
 }
 

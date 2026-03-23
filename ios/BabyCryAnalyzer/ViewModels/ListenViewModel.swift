@@ -14,6 +14,7 @@ class ListenViewModel {
     var selectedFileName: String? = nil
 
     private let analysisService = CryAnalysisService()
+    private let transcriptionService = SpeechTranscriptionService()
 
     func toggleRecording(historyStore: CryHistoryStore) {
         if recorder.isRecording {
@@ -50,10 +51,13 @@ class ListenViewModel {
 
         Task {
             do {
+                let transcription: SpeechTranscriptionResponse? = try? await transcriptionService.transcribeAudio(at: recorder.recordingURL)
                 let analysis = try await analysisService.analyzeCry(
                     durationSeconds: duration,
                     averageDecibels: avgDb,
-                    peakDecibels: peakDb
+                    peakDecibels: peakDb,
+                    transcript: normalizedTranscript(from: transcription),
+                    transcriptLanguage: transcription?.language
                 )
                 withAnimation(.spring(duration: 0.5)) {
                     latestAnalysis = analysis
@@ -84,10 +88,13 @@ class ListenViewModel {
                 return
             }
 
+            let transcription: SpeechTranscriptionResponse? = try? await transcriptionService.transcribeAudio(at: url)
             let analysis = try await analysisService.analyzeCry(
                 durationSeconds: metrics.durationSeconds,
                 averageDecibels: metrics.averageDecibels,
-                peakDecibels: metrics.peakDecibels
+                peakDecibels: metrics.peakDecibels,
+                transcript: normalizedTranscript(from: transcription),
+                transcriptLanguage: transcription?.language
             )
 
             withAnimation(.spring(duration: 0.5)) {
@@ -112,5 +119,12 @@ class ListenViewModel {
         let minutes = recorder.recordingDuration / 60
         let seconds = recorder.recordingDuration % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func normalizedTranscript(from response: SpeechTranscriptionResponse?) -> String? {
+        guard let response else { return nil }
+        let cleaned: String = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return nil }
+        return cleaned
     }
 }
