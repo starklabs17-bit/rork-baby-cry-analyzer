@@ -51,7 +51,9 @@ class CryAnalysisService {
                 logger.error("Attempt \(attempt + 1) failed: \(error.localizedDescription)")
             }
         }
-        throw lastError ?? CryAnalysisError.serverError(500)
+
+        logger.error("Falling back to local analysis after server failure: \(lastError?.localizedDescription ?? "unknown error")")
+        return fallbackAnalysis(durationSeconds: durationSeconds, averageDecibels: averageDecibels, peakDecibels: peakDecibels)
     }
 
     private func callAgentChat(prompt: String) async throws -> String {
@@ -181,6 +183,46 @@ class CryAnalysisService {
         return sentences.last?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? (sentences.last!.trimmingCharacters(in: .whitespacesAndNewlines) + ".")
             : "Try comforting your baby with gentle rocking."
+    }
+
+    private func fallbackAnalysis(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) -> CryAnalysis {
+        let reason: CryReason
+        let confidence: Double
+        let tip: String
+
+        if peakDecibels > -8 || (averageDecibels > -18 && durationSeconds < 12) {
+            reason = .pain
+            confidence = 0.74
+            tip = "A sudden, intense cry can sometimes signal pain or sharp discomfort. Check for anything causing immediate distress and contact your pediatrician if it continues."
+        } else if durationSeconds > 50 && averageDecibels > -24 {
+            reason = .hungry
+            confidence = 0.71
+            tip = "This pattern can line up with hunger cues. Try a feeding if it's been a while, then see whether your baby settles afterward."
+        } else if durationSeconds > 35 && averageDecibels <= -24 {
+            reason = .tired
+            confidence = 0.69
+            tip = "A longer, softer cry often appears when babies are overtired. Try dimming stimulation, holding your baby close, and starting a calming sleep routine."
+        } else if durationSeconds < 15 && peakDecibels < -20 {
+            reason = .gassy
+            confidence = 0.65
+            tip = "Short bursts can sometimes happen with gas or tummy discomfort. Gentle burping, upright holding, or slow bicycle-leg movements may help."
+        } else if averageDecibels > -22 {
+            reason = .needsAttention
+            confidence = 0.64
+            tip = "Your baby may be seeking comfort or closeness. Try holding, rocking, or speaking softly to reassure them."
+        } else {
+            reason = .uncomfortable
+            confidence = 0.6
+            tip = "Your baby may be uncomfortable. Check the diaper, clothing, room temperature, and overall comfort, then try soothing with gentle rocking."
+        }
+
+        return CryAnalysis(
+            reason: reason,
+            confidence: confidence,
+            tip: tip,
+            durationSeconds: durationSeconds,
+            averageDecibels: averageDecibels
+        )
     }
 
     private func buildPrompt(durationSeconds: Int, averageDecibels: Float, peakDecibels: Float) -> String {
