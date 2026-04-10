@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct SignInView: View {
     @Environment(AuthService.self) private var authService
@@ -74,9 +75,13 @@ struct SignInView: View {
                     }
                     .disabled(authService.isLoading)
 
+                    socialDivider
+
+                    socialButtons
+
                     Divider()
                         .overlay(.white.opacity(0.08))
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 4)
 
                     Button("Don't have an account? Sign Up") {
                         showSignUp = true
@@ -120,6 +125,68 @@ struct SignInView: View {
             ForgotPasswordView()
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var socialDivider: some View {
+        HStack(spacing: 12) {
+            Rectangle()
+                .fill(.white.opacity(0.12))
+                .frame(height: 1)
+            Text("or")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.4))
+            Rectangle()
+                .fill(.white.opacity(0.12))
+                .frame(height: 1)
+        }
+    }
+
+    private var socialButtons: some View {
+        VStack(spacing: 10) {
+            SignInWithAppleButton(.signIn) { request in
+                let nonce = authService.generateNonce()
+                request.requestedScopes = [.email, .fullName]
+                request.nonce = authService.hashedNonce
+            } onCompletion: { result in
+                handleAppleSignIn(result)
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 50)
+            .clipShape(.rect(cornerRadius: 16))
+
+            Button {
+                Task { await authService.signInWithGoogle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "globe")
+                        .font(.body.weight(.medium))
+                    Text("Sign in with Google")
+                        .font(.body.weight(.medium))
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(Color.white.opacity(0.1), in: .rect(cornerRadius: 16))
+                .foregroundStyle(.white)
+            }
+        }
+    }
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let identityTokenData = credential.identityToken,
+                  let idToken = String(data: identityTokenData, encoding: .utf8)
+            else { return }
+
+            Task {
+                await authService.signInWithApple(idToken: idToken, fullName: credential.fullName)
+            }
+        case .failure(let error):
+            if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
+                authService.errorMessage = error.localizedDescription
+            }
         }
     }
 

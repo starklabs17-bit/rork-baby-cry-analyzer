@@ -6,6 +6,14 @@ struct ProfileView: View {
     @Environment(CryHistoryStore.self) private var historyStore
     @State private var showSignOutAlert: Bool = false
     @State private var showPaywall: Bool = false
+    @State private var showDeleteAccount: Bool = false
+    @State private var showPrivacy: Bool = false
+    @State private var showTerms: Bool = false
+    @State private var showSupport: Bool = false
+
+    private let privacyURL = URL(string: "https://crysense.app/privacy")!
+    private let termsURL = URL(string: "https://crysense.app/terms")!
+    private let supportURL = URL(string: "https://crysense.app/support")!
 
     var body: some View {
         NavigationStack {
@@ -78,6 +86,29 @@ struct ProfileView: View {
                     }
                 }
 
+                Section("Legal") {
+                    Button {
+                        showPrivacy = true
+                    } label: {
+                        Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    }
+                    .foregroundStyle(.primary)
+
+                    Button {
+                        showTerms = true
+                    } label: {
+                        Label("Terms of Service", systemImage: "doc.text.fill")
+                    }
+                    .foregroundStyle(.primary)
+
+                    Button {
+                        showSupport = true
+                    } label: {
+                        Label("Support", systemImage: "questionmark.circle.fill")
+                    }
+                    .foregroundStyle(.primary)
+                }
+
                 Section {
                     Button(role: .destructive) {
                         showSignOutAlert = true
@@ -85,6 +116,17 @@ struct ProfileView: View {
                         Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                             .foregroundStyle(.red)
                     }
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteAccount = true
+                    } label: {
+                        Label("Delete Account", systemImage: "trash.fill")
+                            .foregroundStyle(.red)
+                    }
+                } footer: {
+                    Text("Permanently delete your account and all associated data.")
                 }
             }
             .listStyle(.insetGrouped)
@@ -101,6 +143,18 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView(store: store)
+        }
+        .sheet(isPresented: $showDeleteAccount) {
+            DeleteAccountView()
+        }
+        .sheet(isPresented: $showPrivacy) {
+            LegalWebView(title: "Privacy Policy", url: privacyURL)
+        }
+        .sheet(isPresented: $showTerms) {
+            LegalWebView(title: "Terms of Service", url: termsURL)
+        }
+        .sheet(isPresented: $showSupport) {
+            LegalWebView(title: "Support", url: supportURL)
         }
     }
 }
