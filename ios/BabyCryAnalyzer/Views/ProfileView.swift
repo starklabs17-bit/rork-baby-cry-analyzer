@@ -2,11 +2,8 @@ import SwiftUI
 
 struct ProfileView: View {
     var store: StoreViewModel
-    @Environment(AuthService.self) private var authService
     @Environment(CryHistoryStore.self) private var historyStore
-    @State private var showSignOutAlert: Bool = false
     @State private var showPaywall: Bool = false
-    @State private var showDeleteAccount: Bool = false
     @State private var showPrivacy: Bool = false
     @State private var showTerms: Bool = false
     @State private var showSupport: Bool = false
@@ -29,7 +26,7 @@ struct ProfileView: View {
                                 .foregroundStyle(Color.accentColor)
                         }
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(authService.currentUserEmail ?? "Account")
+                            Text("CrySense")
                                 .font(.subheadline.bold())
                             Text(store.isPremium ? "Pro Member" : "Free Plan")
                                 .font(.caption)
@@ -108,44 +105,13 @@ struct ProfileView: View {
                     }
                     .foregroundStyle(.primary)
                 }
-
-                Section {
-                    Button(role: .destructive) {
-                        showSignOutAlert = true
-                    } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                            .foregroundStyle(.red)
-                    }
-                }
-
-                Section {
-                    Button(role: .destructive) {
-                        showDeleteAccount = true
-                    } label: {
-                        Label("Delete Account", systemImage: "trash.fill")
-                            .foregroundStyle(.red)
-                    }
-                } footer: {
-                    Text("Permanently delete your account and all associated data.")
-                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
         }
-        .alert("Sign Out?", isPresented: $showSignOutAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Sign Out", role: .destructive) {
-                Task { await authService.signOut() }
-            }
-        } message: {
-            Text("You will be signed out of your account.")
-        }
         .sheet(isPresented: $showPaywall) {
             PaywallView(store: store)
-        }
-        .sheet(isPresented: $showDeleteAccount) {
-            DeleteAccountView()
         }
         .sheet(isPresented: $showPrivacy) {
             LegalWebView(title: "Privacy Policy", url: privacyURL)
