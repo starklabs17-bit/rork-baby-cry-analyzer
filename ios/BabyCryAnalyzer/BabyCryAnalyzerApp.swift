@@ -3,6 +3,7 @@ import RevenueCat
 
 @main
 struct BabyCryAnalyzerApp: App {
+    @State private var authService: AuthService = AuthService()
     @State private var historyStore: CryHistoryStore = CryHistoryStore()
     @State private var storeVM: StoreViewModel = StoreViewModel()
 
@@ -17,8 +18,22 @@ struct BabyCryAnalyzerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(store: storeVM)
-                .environment(historyStore)
+            Group {
+                if authService.isLoading {
+                    ZStack {
+                        Color.black.ignoresSafeArea()
+                        ProgressView()
+                            .tint(.white)
+                    }
+                } else if authService.isAuthenticated {
+                    ContentView(store: storeVM, authService: authService)
+                        .environment(historyStore)
+                } else {
+                    SignInView(authService: authService)
+                }
+            }
+            .animation(.smooth(duration: 0.3), value: authService.isAuthenticated)
+            .animation(.smooth(duration: 0.3), value: authService.isLoading)
         }
     }
 }

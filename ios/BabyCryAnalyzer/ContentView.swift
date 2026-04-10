@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     var store: StoreViewModel
+    var authService: AuthService
 
     var body: some View {
         TabView {
@@ -12,7 +13,7 @@ struct ContentView: View {
                 HistoryView()
             }
             Tab("Profile", systemImage: "person.circle") {
-                ProfileView(store: store)
+                ProfileView(store: store, authService: authService)
             }
         }
         .tint(Color(.label))

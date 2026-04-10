@@ -2,11 +2,17 @@ import SwiftUI
 
 struct ProfileView: View {
     var store: StoreViewModel
+    var authService: AuthService
     @Environment(CryHistoryStore.self) private var historyStore
     @State private var showPaywall: Bool = false
     @State private var showPrivacy: Bool = false
     @State private var showTerms: Bool = false
     @State private var showSupport: Bool = false
+    @State private var showDeleteConfirmation: Bool = false
+    @State private var showSignOutConfirmation: Bool = false
+    @State private var isDeleting: Bool = false
+    @State private var errorMessage: String?
+    @State private var showError: Bool = false
 
     private let privacyURL = URL(string: "https://crysense.app/privacy")!
     private let termsURL = URL(string: "https://crysense.app/terms")!
@@ -26,8 +32,13 @@ struct ProfileView: View {
                                 .foregroundStyle(Color.accentColor)
                         }
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("CrySense")
+                            Text(authService.userDisplayName ?? "CrySense User")
                                 .font(.subheadline.bold())
+                            if let email = authService.userEmail {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             Text(store.isPremium ? "Pro Member" : "Free Plan")
                                 .font(.caption)
                                 .foregroundStyle(store.isPremium ? .green : .secondary)
@@ -105,6 +116,30 @@ struct ProfileView: View {
                     }
                     .foregroundStyle(.primary)
                 }
+
+                Section("Account") {
+                    Button {
+                        showSignOutConfirmation = true
+                    } label: {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                    .foregroundStyle(.primary)
+
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Label {
+                            if isDeleting {
+                                Text("Deleting...")
+                            } else {
+                                Text("Delete Account")
+                            }
+                        } icon: {
+                            Image(systemName: "trash.fill")
+                        }
+                    }
+                    .disabled(isDeleting)
+                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Profile")
@@ -122,5 +157,39 @@ struct ProfileView: View {
         .sheet(isPresented: $showSupport) {
             LegalWebView(title: "Support", url: supportURL)
         }
+        .alert("Sign Out", isPresented: $showSignOutConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Sign Out", role: .destructive) {
+                Task {
+                    try? await authService.signOut()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
+        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+        } message: {
+            Text("This will permanently delete your account and all associated data. This action cannot be undone.")
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage ?? "Something went wrong.")
+        }
+    }
+
+    private func deleteAccount() async {
+        isDeleting = true
+        do {
+            try await authService.deleteAccount()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+        isDeleting = false
     }
 }
